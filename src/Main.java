@@ -8,13 +8,17 @@ public class Main {
         int time = 100000;
         byte[][] mapInfo = new byte[length][length];
         // 障碍物
-        mapInfo[1][1] = 1;
+//        mapInfo[1][1] = 1;
 
         long begin = System.currentTimeMillis();
         System.out.println("begin:" + begin);
         List<Node> nodes = new ArrayList<>();
         for (int i = 0; i < time; i++) {
-            nodes = AStarService.searchWay(1, 1, length - 1, length - 1, mapInfo);
+            nodes = AStarService.searchWay(30, 30, length - 1, length - 1, mapInfo);
+            if (nodes == null || nodes.isEmpty()){
+                System.err.println("fail");
+                return;
+            }
         }
         long end = System.currentTimeMillis();
         System.out.println("end:" + end);
