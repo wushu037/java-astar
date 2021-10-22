@@ -1,4 +1,4 @@
-这是基于 [ClaymanTwinkle/astar] (https://github.com/ClaymanTwinkle/astar) 的
+这是在 [ClaymanTwinkle/astar] (https://github.com/ClaymanTwinkle/astar) 基础上小修小改的
 
 修改了上述实现中简单且严重的bug
 - [issue#1](https://github.com/ClaymanTwinkle/astar/issues/1)、[issue#3](https://github.com/ClaymanTwinkle/astar/issues/3)
