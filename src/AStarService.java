@@ -2,6 +2,7 @@ import java.util.*;
 
 /**
  * 寻路算法
+ * 推荐文章：[A星算法详解(个人认为最详细,最通俗易懂的一个版本)](https://blog.csdn.net/hitwhylz/article/details/23089415)
  * @author wushu
  * @create 2021-07-28 14:49
  */
@@ -31,23 +32,26 @@ public class AStarService {
      */
     public static List<Node> searchWay(int startX, int startY, int endX, int endY, byte[][] maps) {
         Queue<Node> openList = new PriorityQueue<Node>(); // 优先队列(升序)
-        Map<String, Node> closeMap = new HashMap<>();
+        Map<Long, Node> closeMap = new HashMap<>();
         Node start = new Node(startX, startY);
         Node end = new Node(endX, endY);
         MapInfo mapInfo = new MapInfo(maps, start, end);
-        List<Node> nodeList = searchWay(mapInfo, openList, closeMap);
+        List<Node> path = searchWay(mapInfo, openList, closeMap);
 
-        if (nodeList != null && !nodeList.isEmpty()) {
-            // 删除起点(起点的下个点作为寻路的第一个点)
-            nodeList.remove(0);
-        }
-        return nodeList;
+        // 删除起点(起点的下个点是寻路的第一个点。如果不需要这么处理可以注释掉)
+//        if (path != null && !path.isEmpty()) {
+//            path.remove(0);
+//        }
+
+        // todo 可以吧closeMap打印出来看试探到的路径
+
+        return path;
     }
 
     /**
-     * 开始算法，循环移动结点寻找路径，设定循环结束条件，Open表为空或者最终结点在Close表
+     * 算法开始。循环移动节点寻找路径，设定循环结束条件:OpenList为空或者最终节点在CloseList
      */
-    private static List<Node> searchWay(MapInfo mapInfo, Queue<Node> openList, Map<String, Node> closeMap) {
+    private static List<Node> searchWay(MapInfo mapInfo, Queue<Node> openList, Map<Long, Node> closeMap) {
         if (mapInfo.maps[mapInfo.start.coord.x][mapInfo.start.coord.y] == BAR ||
                 mapInfo.maps[mapInfo.end.coord.x][mapInfo.end.coord.y] == BAR) {
             return new ArrayList<>();
@@ -57,109 +61,104 @@ public class AStarService {
         }
         openList.clear();
         closeMap.clear();
-        // 将起点放入open列表
+        // 将起点放入openList
         openList.add(mapInfo.start);
         // 寻路
-        List<Node> nodeList = moveNodes(mapInfo, openList, closeMap);
-        return nodeList;
+        return moveNodes(mapInfo, openList, closeMap);
     }
 
     /**
-     * 移动当前结点
+     * 通过不断地移动节点来寻找路径
      */
-    private static List<Node> moveNodes(MapInfo mapInfo, Queue<Node> openList, Map<String, Node> closeMap) {
-        List<Node> nodeList = new ArrayList<>();
-        // 如果open列表不为空，则循环执行
-        while (!openList.isEmpty()) {
-            // 如果终点在close列表，说明已经找到了终点，则绘制路径
+    private static List<Node> moveNodes(MapInfo mapInfo, Queue<Node> openList, Map<Long, Node> closeMap) {
+        List<Node> path = new ArrayList<>();
+        // closeMap中保存每次遍历时的最优节点(current)，这些路径点不会再被关注
+        while (!openList.isEmpty()) { // 循环，直到openList为空
+            // 如果终点在closeList，说明已经找到了终点，则绘制路径
             if (isCoordInClose(mapInfo.end.coord, closeMap)) {
                 // 回溯法绘制路径
-                nodeList = drawPath(mapInfo.maps, mapInfo.end);
+                path = drawPath(mapInfo.maps, mapInfo.end);
                 break;
             }
-            // 从open列表删除一个最优节点，并把这个节点加入到close列表
+            // 从openList取出并删除一个最优节点作为要处理的节点，并把这个节点加入到closeList。(closeList中的节点不再被关注)
             Node current = openList.poll();
             closeMap.put(getCloseKey(current.coord), current);
-            // 添加所有邻结点到open表
-            addNeighborNodeInOpen(mapInfo, current, openList, closeMap);
+            // 添加所有相邻节点到openList
+            addNeighborNodeToOpen(mapInfo, current, openList, closeMap);
         }
-        return nodeList;
+        return path;
     }
 
     /**
-     * 添加所有邻结点到open表
+     * 把相邻节点添加到openList，这些节点会通过 {@link Node#compareTo(Node)} 排序
      */
-    private static void addNeighborNodeInOpen(MapInfo mapInfo, Node current, Queue<Node> openList, Map<String, Node> closeMap) {
+    private static void addNeighborNodeToOpen(MapInfo mapInfo, Node current, Queue<Node> openList, Map<Long, Node> closeMap) {
         int x = current.coord.x;
         int y = current.coord.y;
         // 左
-        addNeighborNodeInOpen(mapInfo, current, x - 1, y, DIRECT_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x - 1, y, DIRECT_VALUE, openList, closeMap);
         // 上
-        addNeighborNodeInOpen(mapInfo, current, x, y - 1, DIRECT_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x, y - 1, DIRECT_VALUE, openList, closeMap);
         // 右
-        addNeighborNodeInOpen(mapInfo, current, x + 1, y, DIRECT_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x + 1, y, DIRECT_VALUE, openList, closeMap);
         // 下
-        addNeighborNodeInOpen(mapInfo, current, x, y + 1, DIRECT_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x, y + 1, DIRECT_VALUE, openList, closeMap);
         // 右上
-        addNeighborNodeInOpen(mapInfo, current, x - 1, y - 1, OBLIQUE_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x - 1, y - 1, OBLIQUE_VALUE, openList, closeMap);
         // 右下
-        addNeighborNodeInOpen(mapInfo, current, x + 1, y - 1, OBLIQUE_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x + 1, y - 1, OBLIQUE_VALUE, openList, closeMap);
         // 左下
-        addNeighborNodeInOpen(mapInfo, current, x + 1, y + 1, OBLIQUE_VALUE, openList, closeMap);
+        addNeighborNodeToOpen(mapInfo, current, x + 1, y + 1, OBLIQUE_VALUE, openList, closeMap);
         // 左上
-        addNeighborNodeInOpen(mapInfo, current, x - 1, y + 1, OBLIQUE_VALUE, openList, closeMap);
-        // 最优结点排在前面
-//        sort(openList);
+        addNeighborNodeToOpen(mapInfo, current, x - 1, y + 1, OBLIQUE_VALUE, openList, closeMap);
     }
 
 
     /**
-     * 添加一个邻结点到open表
+     * 把节点添加到openList(如果可以的话)
      */
-    private static void addNeighborNodeInOpen(MapInfo mapInfo, Node current, int x, int y, int value, Queue<Node> openList, Map<String, Node> closeMap) {
-        // 如果结点能加入Open列表，则加入open列表
+    private static void addNeighborNodeToOpen(MapInfo mapInfo, Node current, int x, int y, int value, Queue<Node> openList, Map<Long, Node> closeMap) {
         if (canAddNodeToOpen(mapInfo, x, y, closeMap)) {
             Coord coord = new Coord(x, y);
-            // 计算邻结点的G值
+            // 计算邻节点的G值(=当前节点的G值+当前节点到该相邻节点的G值)
             int G = current.G + value;
-            // Open列表中查找该结点
-            Node child = findNodeInOpen(coord, openList);
-            if (child == null) { // 如果结点不在open列表中，则创建结点并添加
+            // OpenList中查找该节点
+            Node node = findNodeInOpen(coord, openList);
+            if (node == null) { // 如果节点不在openList中，则创建节点并添加
+                // 计算H值 (当前节点到终点的估算代价)
                 Node end = mapInfo.end;
-                // 计算H值
                 int H = calcH(end.coord, coord);
-                // 如果是终点
-                if (end.coord.equals(coord)) {
-                    child = end;
-                    child.parent = current;
-                    child.G = G;
-                    child.H = H;
+                if (end.coord.equals(coord)) { // 如果是终点，则不需要重复创建对象
+                    node = end;
+                    node.parent = current;
+                    node.G = G;
+                    node.H = H;
                 } else {
-                    child = new Node(coord, current, G, H);
+                    node = new Node(coord, current, G, H);
                 }
-                openList.add(child);
-            } else if (child.G > G) { //如果在open中，判断两个节点的G值。如果原先的G值比现在大，则替换为小的
-                child.G = G;
-                child.parent = current;
-                openList.add(child);
+                openList.add(node);
+            } else if (node.G > G) { // 如果已经在openList中，则判断原G值和现有G值，采用最小的
+                node.G = G;
+                node.parent = current;
+                openList.add(node);
             }
         }
     }
 
     /**
-     * 判断结点能否放入Open列表
-     * 不能加入的情况：1.超出地图范围; 2.结点是障碍; 3.结点已经被访问过,即在close列表中存在;
+     * 判断节点能否放入OpenList
+     * 不能加入的情况：1.超出地图范围; 2.节点是障碍; 3.节点已经被访问过(即在closeList中存在);
      */
-    private static boolean canAddNodeToOpen(MapInfo mapInfo, int x, int y, Map<String, Node> closeMap) {
-        // 如果不在地图中，则不能加入open列表
+    private static boolean canAddNodeToOpen(MapInfo mapInfo, int x, int y, Map<Long, Node> closeMap) {
+        // 如果不在地图中，则不能加入openList
         if (x < 0 || x >= mapInfo.width || y < 0 || y >= mapInfo.hight) {
             return false;
         }
-        // 如果结点是障碍，则不能加入open列表
+        // 如果节点是障碍，则不能加入openList
         if (mapInfo.maps[x][y] == BAR) {
             return false;
         }
-        // 如果结点在close表，则不能加入open列表
+        // 如果节点在closeList，则不能加入openList
         if (isCoordInClose(new Coord(x, y), closeMap)) {
             return false;
         }
@@ -167,9 +166,9 @@ public class AStarService {
     }
 
     /**
-     * 判断坐标是否在close表中
+     * 判断坐标是否在closeList中
      */
-    private static boolean isCoordInClose(Coord coord, Map<String, Node> closeMap) {
+    private static boolean isCoordInClose(Coord coord, Map<Long, Node> closeMap) {
         if (coord == null || closeMap.isEmpty()) {
             return false;
         }
@@ -178,23 +177,22 @@ public class AStarService {
 
     /**
      * 生成closeMap的Key
-     * 在40*40无障碍地图中，10w次最大耗时，Integer的key比String的key少2秒。
-     * 但是找不出怎么将两个有序数字转为固定且唯一的数字
+     * tips：为了提高效率，将x、y拼接为long作为key
      */
-    private static String getCloseKey(Coord coord) {
-        return coord.x + "," + coord.y;
+    private static long getCloseKey(Coord coord) {
+        return (long) coord.x << 32 | coord.y;
     }
 
 
     /**
-     * 计算H值，“曼哈顿” 法，坐标分别取差值相加
+     * 计算H值 (“曼哈顿距离”，坐标分别取差值相加)
      */
     private static int calcH(Coord end, Coord coord) {
         return DIRECT_VALUE * (Math.abs(end.x - coord.x) + Math.abs(end.y - coord.y));
     }
 
     /**
-     * 从Open列表中查找结点
+     * 从OpenList中查找节点
      */
     private static Node findNodeInOpen(Coord coord, Queue<Node> openList) {
         if (coord == null || openList.isEmpty()) {
@@ -212,16 +210,15 @@ public class AStarService {
     /**
      * 回溯法绘制路径
      */
-    private static List<Node> drawPath(byte[][] maps, Node end) {
-        if (end == null || maps == null) {
+    private static List<Node> drawPath(byte[][] maps, Node last) {
+        if (last == null || maps == null) {
             return new ArrayList<>();
         }
-//        log.info("\n总代价：" + end.G);
+//        System.out.println("\n总代价：" + end.G);
         List<Node> nodeList = new ArrayList<>();
-        while (end != null) {
-            Coord c = end.coord;
-            nodeList.add(0, end);
-            end = end.parent;
+        while (last != null) {
+            nodeList.add(0, last);
+            last = last.parent;
         }
         return nodeList;
     }

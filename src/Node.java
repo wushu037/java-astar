@@ -6,11 +6,11 @@
 public class Node implements Comparable<Node> {
     /**坐标*/
     public Coord coord;
-    /**父结点*/
+    /**父节点*/
     public Node parent;
-    /**是个准确的值，是起点到当前结点的代价*/
+    /**起点到当前节点的代价，是一个准确的值*/
     public int G;
-    /**是个估值，当前结点到目的结点的估计代价*/
+    /**当前节点到终点的估算代价，是一个估值*/
     public int H;
 
     public Node(int x, int y) {
@@ -26,7 +26,7 @@ public class Node implements Comparable<Node> {
 
 
     /**
-     * 最优结点排在前面
+     * 最优节点(F值最小的节点，F=G+H)排在前面
      * @param node
      * @return
      */
@@ -40,7 +40,10 @@ public class Node implements Comparable<Node> {
         } else if (this.G + this.H < node.G + node.H) {
             return -1;
         }
-        return 0;
+        // 当有相同F值的节点存在时。此处返回>0、<0得到的路线并不相同(但也差不了多少)
+        // 此时不同的返回决定了优先使用后加入的节点还是先加入的节点，是否这样做取决于你自己的偏好
+        // 实际上如果终点是可达的，无论你返回什么，都不影响是否能寻到路
+        return 1;
     }
 
     @Override

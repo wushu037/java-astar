@@ -10,15 +10,15 @@ public class MapInfo {
     public int width;
     /**地图的高*/
     public int hight;
-    /**起始结点*/
+    /**起始节点*/
     public Node start;
-    /**最终结点*/
+    /**最终节点*/
     public Node end;
 
     public MapInfo(byte[][] maps, Node start, Node end) {
         this.maps = maps;
-        this.width = maps[0].length;
-        this.hight = maps.length;
+        this.width = maps.length;
+        this.hight = maps[0].length;
         this.start = start;
         this.end = end;
     }
